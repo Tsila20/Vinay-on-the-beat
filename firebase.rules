@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.email == request.resource.data.adminEmail;
+    }
+
+    match /settings/public {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if signedIn() && request.auth.token.email != null;
+    }
+
+    match /conversations/{conversationId} {
+      allow create: if signedIn();
+      allow read, update: if signedIn();
+    }
+
+    match /conversations/{conversationId}/messages/{messageId} {
+      allow create, read: if signedIn();
+      allow update, delete: if false;
+    }
+  }
+}
